@@ -1,15 +1,15 @@
 /**
  * Supabase Client & Data Manager (db-manager.js)
  * Kết nối trực tiếp Website với Supabase Cloud (PostgreSQL + Supabase Auth + RLS):
- *  - Project URL: https://uxlzpayquiqjkrezhidp.supabase.co
+ *  - Project URL: https://ewovaxasdtyvnyscyppp.supabase.co
  *  - Sử dụng Publishable Key an toàn cho trình duyệt (không bao giờ chứa DB Password)
  */
 
 (function (window) {
     'use strict';
 
-    const SUPABASE_URL = 'https://uxlzpayquiqjkrezhidp.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Ab3IaZDlOo6yyTjnRU4OwA_dF0c0A96';
+    const SUPABASE_URL = 'https://ewovaxasdtyvnyscyppp.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_CNz74gQMWOHrPadUGcKZ_Q_-8Waoofi';
     const EPHEMERAL_FLAG_KEY = 'vibe_supabase_ephemeral_mode';
 
     let supabaseClient = null;
