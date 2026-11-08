@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Phân Quyền | Video Admin Portal</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Mobile Backdrop -->
+        <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+        <!-- Left Fixed Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">VibeVideo</span>
+                    <span class="brand-subtitle">Supabase Admin Portal</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Điều hướng chính">
+                <div class="nav-section-label">Menu Quản trị</div>
+                <a href="index.html" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+                        <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+                        <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+                    </svg>
+                    <span>Tổng quan (Dashboard)</span>
+                </a>
+                <a href="videos.html" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <polygon points="10 9 15 12 10 15 10 9"></polygon>
+                    </svg>
+                    <span>Quản lý Video</span>
+                </a>
+                <a href="permissions.html" id="navPermissionsLink" class="nav-link active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <span>Phân quyền (Permissions)</span>
+                </a>
+            </nav>
+
+            <!-- Supabase Cloud Status Box -->
+            <div class="sidebar-db-box">
+                <div class="db-status-row">
+                    <span class="status-dot"></span>
+                    <span>Supabase Cloud Connected</span>
+                </div>
+                <p class="db-status-desc">
+                    Đồng bộ trực tiếp với <strong>PostgreSQL + Auth + RLS</strong> trên Supabase.
+                </p>
+                <div class="db-actions-mini">
+                    <button type="button" id="exportVideosDbBtn" class="btn-mini" title="Xuất JSON bảng videos từ Supabase">videos.json</button>
+                    <button type="button" id="exportUsersDbBtn" class="btn-mini" title="Xuất JSON bảng users từ Supabase">users.json</button>
+                    <button type="button" id="resetDemoDbBtn" class="btn-mini" title="Tải lại dữ liệu mới nhất từ Cloud">Làm mới</button>
+                </div>
+            </div>
+
+            <!-- Logged-in User Footer -->
+            <div class="sidebar-footer">
+                <div class="user-mini-info">
+                    <div id="currentUserAvatar" class="user-avatar">AD</div>
+                    <div class="user-meta">
+                        <div id="currentUserName" class="user-name">Admin Vibe</div>
+                        <div id="currentUserRole" class="user-role">ADMIN</div>
+                    </div>
+                </div>
+                <button type="button" id="logoutBtn" class="btn-logout-icon" title="Đăng xuất" aria-label="Đăng xuất">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <div class="main-wrapper">
+            <header class="top-header">
+                <div class="header-left">
+                    <button type="button" id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Mở menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="page-heading">Quản lý Phân Quyền</h1>
+                        <p class="page-subheading">Danh sách tài khoản và chỉnh sửa vai trò (ADMIN / USER) trực tiếp trên Supabase</p>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <span id="headerRoleBadge" class="badge-pill hide-mobile">
+                        <span class="status-dot" style="width:7px;height:7px;"></span>
+                        Permission Management
+                    </span>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <!-- Loading State -->
+                <div id="permissionsLoading" class="card db-loading-banner">
+                    <div class="spinner"></div>
+                    <span>Đang kiểm tra quyền truy cập và nạp dữ liệu từ Supabase...</span>
+                </div>
+
+                <!-- 403 Access Denied State (Dành cho tài khoản role USER nếu truy cập trực tiếp qua URL) -->
+                <section id="accessDeniedSection" class="card access-denied-card" style="display: none;" aria-live="polite">
+                    <div class="access-denied-icon" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h2 class="access-denied-title">Không có quyền truy cập (403)</h2>
+                    <p class="access-denied-desc">
+                        Tài khoản hiện tại (<strong id="deniedAccountEmail"></strong>) đang có vai trò
+                        <span class="role-badge user">USER</span>. Chỉ tài khoản có vai trò
+                        <span class="role-badge admin">ADMIN</span> mới được phép vào trang <strong>Phân Quyền</strong>.
+                    </p>
+                    <div class="access-denied-actions">
+                        <a href="index.html" class="btn btn-secondary">Quay về Dashboard</a>
+                        <button type="button" id="switchAdminAccountBtn" class="btn btn-primary">Đăng nhập tài khoản ADMIN</button>
+                    </div>
+                </section>
+
+                <!-- Main Permission Management Content (Chỉ hiển thị cho role ADMIN) -->
+                <div id="permissionsContent" style="display: none;">
+                    <!-- 3 Metric Cards -->
+                    <section class="metrics-grid" aria-label="Thống kê phân quyền">
+                        <article class="card metric-card">
+                            <div class="metric-top">
+                                <div>
+                                    <div class="metric-label">Tổng số Tài khoản</div>
+                                    <div id="permTotalAccounts" class="metric-value">0</div>
+                                </div>
+                                <div class="metric-icon amber" aria-hidden="true">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="metric-foot">
+                                <span>Lưu trữ bền vững trong IndexedDB</span>
+                                <span class="metric-badge success">users.db</span>
+                            </div>
+                        </article>
+
+                        <article class="card metric-card">
+                            <div class="metric-top">
+                                <div>
+                                    <div class="metric-label">Tài khoản Quyền ADMIN</div>
+                                    <div id="permAdminCount" class="metric-value">0</div>
+                                </div>
+                                <div class="metric-icon blue" aria-hidden="true">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="metric-foot">
+                                <span>Được truy cập &amp; chỉnh sửa Phân Quyền</span>
+                                <span class="role-badge admin">ADMIN</span>
+                            </div>
+                        </article>
+
+                        <article class="card metric-card">
+                            <div class="metric-top">
+                                <div>
+                                    <div class="metric-label">Tài khoản Quyền USER</div>
+                                    <div id="permUserCount" class="metric-value">0</div>
+                                </div>
+                                <div class="metric-icon green" aria-hidden="true">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="metric-foot">
+                                <span>Người dùng tiêu chuẩn trong hệ thống</span>
+                                <span class="role-badge user">USER</span>
+                            </div>
+                        </article>
+                    </section>
+
+                    <!-- Role Description Banner -->
+                    <section class="role-guide-grid" aria-label="Mô tả vai trò hệ thống">
+                        <div class="card role-guide-card">
+                            <div class="metric-icon blue" style="width:40px;height:40px;border-radius:10px;">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="role-guide-title">
+                                    <span>Quyền Quản trị viên</span>
+                                    <span class="role-badge admin">ADMIN</span>
+                                </div>
+                                <p class="role-guide-desc">
+                                    Được quyền truy cập trang <strong>Phân Quyền</strong>, xem danh sách toàn bộ tài khoản và thay đổi role của các tài khoản khác giữa <code>ADMIN</code> và <code>USER</code>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card role-guide-card">
+                            <div class="metric-icon green" style="width:40px;height:40px;border-radius:10px;">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="role-guide-title">
+                                    <span>Quyền Người dùng</span>
+                                    <span class="role-badge user">USER</span>
+                                </div>
+                                <p class="role-guide-desc">
+                                    Tài khoản thành viên mặc định (bao gồm các tài khoản mẫu <code>user1@demo.com</code> &rarr; <code>user10@demo.com</code>). Không có quyền truy cập trang Phân Quyền.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Toolbar: Search & Filter Role -->
+                    <section class="card toolbar-card" aria-label="Bộ lọc tài khoản">
+                        <div class="toolbar-filters">
+                            <div class="search-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input
+                                    type="search"
+                                    id="permSearchInput"
+                                    class="form-control"
+                                    placeholder="Tìm theo Email, Username hoặc Họ tên (vd: user1@demo.com)..."
+                                    aria-label="Tìm kiếm tài khoản"
+                                />
+                            </div>
+
+                            <select id="permRoleFilter" class="form-control filter-select" aria-label="Lọc theo vai trò">
+                                <option value="">Tất cả vai trò (Role)</option>
+                                <option value="ADMIN">Chỉ quyền ADMIN</option>
+                                <option value="USER">Chỉ quyền USER</option>
+                            </select>
+                        </div>
+
+                        <div class="toolbar-actions">
+                            <span id="permCountBadge" class="badge-pill">0 tài khoản</span>
+                        </div>
+                    </section>
+
+                    <!-- Users & Roles Data Table -->
+                    <section class="card table-card" aria-label="Danh sách tài khoản và phân quyền">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tài khoản</th>
+                                        <th>Email</th>
+                                        <th>Role hiện tại</th>
+                                        <th>Ngày tạo</th>
+                                        <th style="text-align: right;">Chỉnh sửa Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="permissionsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/db-manager.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/permissions.js"></script>
+</body>
+</html>

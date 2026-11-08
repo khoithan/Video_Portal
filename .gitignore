@@ -1,0 +1,4 @@
+# Bảo vệ thông tin nhạy cảm (mật khẩu DB Supabase) không đẩy lên Git
+supabase.txt
+.env
+.env.*
