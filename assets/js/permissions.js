@@ -1,8 +1,8 @@
 /**
  * Permission Management Module (permissions.js)
- * Quản lý phân quyền tài khoản với 2 vai trò: ADMIN và USER trực tiếp trên bảng public.users (Supabase PostgreSQL + RLS).
+ * Quản lý tài khoản & phân quyền với 2 vai trò: ADMIN và USER trực tiếp trên bảng public.users (Supabase PostgreSQL + RLS).
  * - Chỉ tài khoản role ADMIN mới được phép truy cập trang này.
- * - ADMIN có thể xem danh sách tài khoản và chỉnh sửa role của các tài khoản khác.
+ * - ADMIN có thể tạo tài khoản mới kèm vai trò (ADMIN / USER) và chỉnh sửa role của các tài khoản khác.
  */
 
 (function (window) {
@@ -10,6 +10,7 @@
 
     let currentAdminUser = null;
     let searchDebounceTimer = null;
+    let newlyCreatedAccountId = null;
 
     function formatNumber(num) {
         return Number(num || 0).toLocaleString('vi-VN');
@@ -19,6 +20,158 @@
         if (!raw) return '—';
         return String(raw).slice(0, 16).replace('T', ' ');
     }
+
+    // =========================================================================
+    // 1. QUẢN LÝ MODAL TẠO TÀI KHOẢN & PHÂN QUYỀN MỚI
+    // =========================================================================
+
+    function showCreateModalAlert(message, type = 'error') {
+        const alertEl = document.getElementById('createAccountAlert');
+        if (!alertEl) return;
+        alertEl.className = `auth-alert show ${type}`;
+        alertEl.textContent = message;
+    }
+
+    function clearCreateModalAlert() {
+        const alertEl = document.getElementById('createAccountAlert');
+        if (!alertEl) return;
+        alertEl.className = 'auth-alert';
+        alertEl.textContent = '';
+    }
+
+    function syncRolePickerSelection() {
+        const picker = document.getElementById('newAccRolePicker');
+        if (!picker) return;
+
+        picker.querySelectorAll('.role-option-card').forEach((card) => {
+            const radio = card.querySelector('input[name="newAccRole"]');
+            card.classList.toggle('selected', Boolean(radio && radio.checked));
+        });
+    }
+
+    function openCreateAccountModal() {
+        if (!currentAdminUser || !window.Auth.isAdmin(currentAdminUser)) {
+            window.Auth.showToast('Chỉ tài khoản ADMIN mới được phép tạo tài khoản mới.', 'error');
+            return;
+        }
+
+        const form = document.getElementById('createAccountForm');
+        if (form) form.reset();
+
+        // Đặt lại trạng thái mặc định cho các ô mật khẩu (nếu trước đó bấm Hiện mật khẩu)
+        ['newAccPassword', 'newAccConfirmPassword'].forEach((inputId) => {
+            const input = document.getElementById(inputId);
+            if (input) input.type = 'password';
+            const toggleBtn = document.querySelector(`.toggle-password-btn[data-target="${inputId}"]`);
+            if (toggleBtn) {
+                toggleBtn.style.color = 'var(--text-muted)';
+                toggleBtn.setAttribute('aria-label', 'Hiện mật khẩu');
+            }
+        });
+
+        clearCreateModalAlert();
+        syncRolePickerSelection();
+
+        const modal = document.getElementById('createAccountModal');
+        if (modal) {
+            modal.classList.add('open');
+            setTimeout(() => document.getElementById('newAccUsername')?.focus(), 80);
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('open');
+    }
+
+    async function handleCreateAccountSubmit(e) {
+        e.preventDefault();
+        clearCreateModalAlert();
+
+        const username = (document.getElementById('newAccUsername')?.value || '').trim();
+        const fullName = (document.getElementById('newAccFullName')?.value || '').trim();
+        const email = (document.getElementById('newAccEmail')?.value || '').trim().toLowerCase();
+        const password = document.getElementById('newAccPassword')?.value || '';
+        const confirmPassword = document.getElementById('newAccConfirmPassword')?.value || '';
+        const selectedRoleRadio = document.querySelector('input[name="newAccRole"]:checked');
+        const role = selectedRoleRadio ? selectedRoleRadio.value : 'USER';
+        const submitBtn = document.getElementById('submitCreateAccountBtn');
+
+        if (!username || !email || !password || !confirmPassword) {
+            showCreateModalAlert('Vui lòng nhập đầy đủ các trường bắt buộc (*).');
+            return;
+        }
+
+        if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) {
+            showCreateModalAlert('Username cần từ 3-30 ký tự (chữ cái, số, dấu chấm, gạch dưới, gạch ngang).');
+            document.getElementById('newAccUsername')?.focus();
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showCreateModalAlert('Định dạng địa chỉ Email không hợp lệ.');
+            document.getElementById('newAccEmail')?.focus();
+            return;
+        }
+
+        if (password.length < 6) {
+            showCreateModalAlert('Mật khẩu khởi tạo phải có tối thiểu 6 ký tự.');
+            document.getElementById('newAccPassword')?.focus();
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showCreateModalAlert('Mật khẩu xác nhận không khớp.');
+            document.getElementById('newAccConfirmPassword')?.focus();
+            return;
+        }
+
+        try {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Đang tạo trên Supabase...';
+            }
+
+            const created = await window.DBManager.adminCreateAccount({
+                username,
+                email,
+                password,
+                fullName: fullName || username,
+                role
+            });
+
+            // Mở rộng bộ lọc nếu đang lọc khác với tài khoản vừa tạo để Admin thấy ngay dòng mới
+            const roleFilterEl = document.getElementById('permRoleFilter');
+            const searchInputEl = document.getElementById('permSearchInput');
+            if (roleFilterEl && roleFilterEl.value && roleFilterEl.value !== created.role) {
+                roleFilterEl.value = '';
+            }
+            if (searchInputEl && searchInputEl.value.trim()) {
+                searchInputEl.value = '';
+            }
+
+            newlyCreatedAccountId = created?.id ? Number(created.id) : null;
+
+            await Promise.all([renderPermissionMetrics(), renderAccountsTable()]);
+            closeModal('createAccountModal');
+
+            window.Auth.showToast(
+                `Đã tạo tài khoản ${created.email} với quyền ${created.role} trên Supabase!`,
+                'success'
+            );
+        } catch (err) {
+            showCreateModalAlert(err.message || 'Không thể tạo tài khoản mới trên Supabase.');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Tạo & Phân quyền';
+            }
+        }
+    }
+
+    // =========================================================================
+    // 2. HIỂN THỊ THỐNG KÊ & BẢNG DANH SÁCH TÀI KHOẢN
+    // =========================================================================
 
     async function renderPermissionMetrics() {
         const stats = await window.DBManager.getPermissionStats();
@@ -61,13 +214,16 @@
                                 </svg>
                             </div>
                             <div class="empty-title">Không tìm thấy tài khoản phù hợp</div>
-                            <div class="empty-desc">Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc vai trò.</div>
+                            <div class="empty-desc">Thử thay đổi từ khóa tìm kiếm, bộ lọc vai trò hoặc nhấn "+ Tạo Tài khoản Mới".</div>
                         </div>
                     </td>
                 </tr>
             `;
             return;
         }
+
+        const highlightId = newlyCreatedAccountId;
+        newlyCreatedAccountId = null;
 
         tbody.innerHTML = accounts
             .map((acc) => {
@@ -77,6 +233,7 @@
                     currentAdminUser &&
                     ((acc.auth_user_id && acc.auth_user_id === currentAdminUser.auth_user_id) ||
                         Number(acc.id) === Number(currentAdminUser.id));
+                const isNewlyCreated = highlightId !== null && Number(acc.id) === Number(highlightId);
 
                 const displayName = acc.full_name || acc.username;
                 const initials = window.Auth.getInitials(displayName);
@@ -117,7 +274,7 @@
                     `;
 
                 return `
-                    <tr data-account-row-id="${acc.id}">
+                    <tr data-account-row-id="${acc.id}" class="${isNewlyCreated ? 'row-newly-created' : ''}">
                         <td class="col-id">#${acc.id}</td>
                         <td>
                             <div class="user-account-cell">
@@ -151,6 +308,10 @@
             .join('');
     }
 
+    // =========================================================================
+    // 3. CẬP NHẬT ROLE & GẮN SỰ KIỆN TƯƠNG TÁC
+    // =========================================================================
+
     async function handleUpdateAccountRole(targetUserId, newRole, triggerBtn) {
         if (currentAdminUser && Number(targetUserId) === Number(currentAdminUser.id)) {
             window.Auth.showToast('Không thể tự thay đổi vai trò của tài khoản đang đăng nhập.', 'warning');
@@ -181,6 +342,35 @@
     }
 
     function bindPermissionEvents() {
+        // Mở / Đóng Modal Tạo tài khoản
+        document.getElementById('openCreateAccountBtn')?.addEventListener('click', openCreateAccountModal);
+
+        document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                closeModal(btn.getAttribute('data-close-modal'));
+            });
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach((overlay) => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeModal(overlay.id);
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach((overlay) => {
+                    closeModal(overlay.id);
+                });
+            }
+        });
+
+        document.getElementById('newAccRolePicker')?.addEventListener('change', syncRolePickerSelection);
+        document.getElementById('createAccountForm')?.addEventListener('submit', handleCreateAccountSubmit);
+
+        // Bộ lọc tìm kiếm & vai trò
         document.getElementById('permSearchInput')?.addEventListener('input', () => {
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => {
@@ -199,6 +389,7 @@
             });
         }
 
+        // Thay đổi Role trực tiếp trên dòng của bảng
         const tbody = document.getElementById('permissionsTableBody');
         if (tbody) {
             tbody.addEventListener('change', (e) => {
@@ -238,6 +429,7 @@
         const loadingEl = document.getElementById('permissionsLoading');
         const deniedEl = document.getElementById('accessDeniedSection');
         const contentEl = document.getElementById('permissionsContent');
+        const createBtnEl = document.getElementById('openCreateAccountBtn');
 
         try {
             const liveUser = await window.Auth.requireAuthAsync();
@@ -251,15 +443,23 @@
                 if (deniedEmailEl) {
                     deniedEmailEl.textContent = liveUser.email || liveUser.username;
                 }
+                if (createBtnEl) createBtnEl.style.display = 'none';
                 if (deniedEl) deniedEl.style.display = 'block';
                 if (contentEl) contentEl.style.display = 'none';
                 return;
             }
 
+            if (createBtnEl) createBtnEl.style.display = 'inline-flex';
             if (deniedEl) deniedEl.style.display = 'none';
             if (contentEl) contentEl.style.display = 'block';
 
             await Promise.all([renderPermissionMetrics(), renderAccountsTable()]);
+
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'create') {
+                openCreateAccountModal();
+                window.history.replaceState({}, document.title, 'permissions.html');
+            }
         } catch (err) {
             console.error('[Permissions] Lỗi kết nối Supabase:', err);
             if (loadingEl) {

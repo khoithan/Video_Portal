@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quản lý Phân Quyền | Video Admin Portal</title>
-    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/style.css?v=3" />
 </head>
 <body>
     <div class="app-layout">
@@ -98,8 +98,8 @@
                         </svg>
                     </button>
                     <div>
-                        <h1 class="page-heading">Quản lý Phân Quyền</h1>
-                        <p class="page-subheading">Danh sách tài khoản và chỉnh sửa vai trò (ADMIN / USER) trực tiếp trên Supabase</p>
+                        <h1 class="page-heading">Quản lý Tài khoản &amp; Phân Quyền</h1>
+                        <p class="page-subheading">Thêm tài khoản mới và phân quyền vai trò (ADMIN / USER) trực tiếp trên Supabase</p>
                     </div>
                 </div>
 
@@ -108,6 +108,15 @@
                         <span class="status-dot" style="width:7px;height:7px;"></span>
                         Permission Management
                     </span>
+                    <button type="button" id="openCreateAccountBtn" class="btn btn-primary" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        <span>+ Tạo Tài khoản Mới</span>
+                    </button>
                 </div>
             </header>
 
@@ -216,7 +225,7 @@
                                     <span class="role-badge admin">ADMIN</span>
                                 </div>
                                 <p class="role-guide-desc">
-                                    Được quyền truy cập trang <strong>Phân Quyền</strong>, xem danh sách toàn bộ tài khoản và thay đổi role của các tài khoản khác giữa <code>ADMIN</code> và <code>USER</code>.
+                                    Được quyền truy cập trang <strong>Phân Quyền</strong>, tạo tài khoản mới kèm vai trò ban đầu và thay đổi role của các tài khoản khác giữa <code>ADMIN</code> và <code>USER</code>.
                                 </p>
                             </div>
                         </div>
@@ -292,9 +301,140 @@
         </div>
     </div>
 
+    <!-- =====================================================================
+         MODAL: TẠO TÀI KHOẢN & PHÂN QUYỀN MỚI (CHỈ DÀNH CHO ADMIN)
+         ===================================================================== -->
+    <div id="createAccountModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="createAccountModalTitle">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="createAccountModalTitle" class="modal-title">Tạo Tài khoản &amp; Phân Quyền Mới</h2>
+                <button type="button" class="modal-close" data-close-modal="createAccountModal" aria-label="Đóng">&times;</button>
+            </div>
+            <form id="createAccountForm" novalidate>
+                <div class="modal-body">
+                    <div id="createAccountAlert" class="auth-alert" role="alert"></div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="newAccUsername" class="form-label">Username <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="newAccUsername"
+                                class="form-control"
+                                placeholder="vd: mod_khoi"
+                                autocomplete="off"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="newAccFullName" class="form-label">Họ và tên hiển thị</label>
+                            <input
+                                type="text"
+                                id="newAccFullName"
+                                class="form-control"
+                                placeholder="vd: Trần Minh Khôi"
+                                autocomplete="off"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newAccEmail" class="form-label">Địa chỉ Email <span class="required">*</span></label>
+                        <input
+                            type="email"
+                            id="newAccEmail"
+                            class="form-control"
+                            placeholder="vd: khoi@vibecoding.dev"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="newAccPassword" class="form-label">Mật khẩu khởi tạo <span class="required">*</span></label>
+                            <div class="input-with-action">
+                                <input
+                                    type="password"
+                                    id="newAccPassword"
+                                    class="form-control"
+                                    placeholder="Tối thiểu 6 ký tự"
+                                    autocomplete="new-password"
+                                    required
+                                />
+                                <button type="button" class="input-icon-btn toggle-password-btn" data-target="newAccPassword" aria-label="Hiện mật khẩu">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newAccConfirmPassword" class="form-label">Xác nhận mật khẩu <span class="required">*</span></label>
+                            <div class="input-with-action">
+                                <input
+                                    type="password"
+                                    id="newAccConfirmPassword"
+                                    class="form-control"
+                                    placeholder="Nhập lại mật khẩu"
+                                    autocomplete="new-password"
+                                    required
+                                />
+                                <button type="button" class="input-icon-btn toggle-password-btn" data-target="newAccConfirmPassword" aria-label="Hiện mật khẩu">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Phân quyền vai trò (Role) <span class="required">*</span></label>
+                        <div class="role-picker-grid" id="newAccRolePicker">
+                            <label class="role-option-card selected" data-role-card="USER">
+                                <input type="radio" name="newAccRole" value="USER" checked />
+                                <div class="role-option-content">
+                                    <div class="role-option-head">
+                                        <span>Người dùng</span>
+                                        <span class="role-badge user">USER</span>
+                                    </div>
+                                    <div class="role-option-desc">
+                                        Xem Dashboard &amp; quản lý kho video. Không có quyền vào trang Phân Quyền.
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="role-option-card" data-role-card="ADMIN">
+                                <input type="radio" name="newAccRole" value="ADMIN" />
+                                <div class="role-option-content">
+                                    <div class="role-option-head">
+                                        <span>Quản trị viên</span>
+                                        <span class="role-badge admin">ADMIN</span>
+                                    </div>
+                                    <div class="role-option-desc">
+                                        Toàn quyền hệ thống, được thêm tài khoản mới và chỉnh sửa phân quyền.
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal="createAccountModal">Hủy bỏ</button>
+                    <button type="submit" id="submitCreateAccountBtn" class="btn btn-primary">Tạo &amp; Phân quyền</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="assets/js/db-manager.js?v=2"></script>
-    <script src="assets/js/auth.js?v=2"></script>
-    <script src="assets/js/permissions.js?v=2"></script>
+    <script src="assets/js/db-manager.js?v=3"></script>
+    <script src="assets/js/auth.js?v=3"></script>
+    <script src="assets/js/permissions.js?v=3"></script>
 </body>
 </html>

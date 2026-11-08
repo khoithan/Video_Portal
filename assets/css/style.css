@@ -1812,8 +1812,85 @@ img {
     flex-wrap: wrap;
 }
 
+/* Role Picker Cards inside Admin Create Account Modal */
+.role-picker-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.role-option-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border);
+    background-color: var(--bg-primary);
+    cursor: pointer;
+    transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.role-option-card:hover {
+    border-color: #CBD5E1;
+    background-color: var(--bg-secondary);
+}
+
+.role-option-card input[type="radio"] {
+    margin-top: 3px;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.role-option-card.selected,
+.role-option-card:has(input[type="radio"]:checked) {
+    border-color: var(--accent);
+    background-color: #F8FAFF;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.role-option-content {
+    min-width: 0;
+}
+
+.role-option-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.role-option-desc {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.data-table tbody tr.row-newly-created {
+    animation: highlightNewRow 2.4s ease-out forwards;
+}
+
+@keyframes highlightNewRow {
+    0% {
+        background-color: #DBEAFE;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
 @media (max-width: 768px) {
-    .role-guide-grid {
+    .role-guide-grid,
+    .role-picker-grid {
         grid-template-columns: 1fr;
     }
 }

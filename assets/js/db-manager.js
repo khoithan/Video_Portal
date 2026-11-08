@@ -283,6 +283,24 @@
         return data;
     }
 
+    async function adminCreateAccount({ username, email, password, fullName, role = 'USER' }) {
+        const client = getClient();
+        const normalizedRole = String(role || 'USER').trim().toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER';
+
+        const { data, error } = await client.rpc('admin_create_portal_user', {
+            p_username: String(username || '').trim(),
+            p_email: String(email || '').trim().toLowerCase(),
+            p_password: password,
+            p_full_name: String(fullName || username || '').trim(),
+            p_role: normalizedRole
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+        return data;
+    }
+
     // =========================================================================
     // 3. DASHBOARD METRICS & ANALYTICS (videos, video_categories, video_analytics)
     // =========================================================================
@@ -590,6 +608,7 @@
         getPermissionStats,
         listAccounts,
         updateAccountRole,
+        adminCreateAccount,
         // Dashboard
         getDashboardOverview,
         getTopVideos,
